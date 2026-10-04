@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 匿名心情分享（方案 B）：链接 + 访问口令
+model AnonymousMood {
+  id             String    @id @default(uuid())
+  shareCode      String    @unique
+  content        String
+  passcodeHash   String
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  expiresAt      DateTime
+  createdAt      DateTime  @default(now())
+}

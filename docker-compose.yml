@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: banyu
+      POSTGRES_PASSWORD: banyu
+      POSTGRES_DB: banyu
+    ports:
+      - "5432:5432"
+    volumes:
+      - banyu_pgdata:/var/lib/postgresql/data
+
+volumes:
+  banyu_pgdata:
