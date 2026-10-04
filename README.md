@@ -34,7 +34,7 @@ cp .env.example .env && vim .env   # 改 POSTGRES_PASSWORD 为强密码；CORS_O
 docker compose up -d --build
 ```
 
-- 应用通过 `http://服务器IP:8787` 访问（记得在云厂商安全组/防火墙放行该端口）
+- 生产入口 `https://ban-yu.xyz`（nginx 80/443 统一入口：静态前端 + `/api/*` 反代到 `127.0.0.1:8787`，证书由 certbot 自动签发续期，HTTP 自动跳转 HTTPS）
 - 容器启动时会自动执行 `prisma db push` 同步表结构，数据存在 `banyu_pgdata` 卷里
 - 数据库只监听容器网络，宿主机也仅绑定 `127.0.0.1:5432`，不对公网暴露
 
@@ -47,4 +47,4 @@ docker compose exec db psql -U banyu -d banyu     # 进数据库
 
 **更新后端**：在本地跑 `./scripts/deploy.sh`——构建 amd64 镜像、流式传到服务器 `docker load`、替换容器并做健康检查，一条命令完成。服务器上没有代码仓库，不要在服务器上构建。
 
-以后有域名了，建议加一层 [Caddy](https://caddyserver.com/) 反向代理自动配 HTTPS：`服务器IP:8787` 之外，把域名指向服务器并反代到 8787 即可；`trust proxy` 已按一层代理设置，`CORS_ORIGIN` 里放行前端域名。
+域名 ban-yu.xyz 已上线（DNS 托管在 Vercel，A 记录指向服务器；nginx + certbot 负责 HTTPS）。`trust proxy` 已按一层代理设置；若前端独立部署到其他域名，把该域名放进 `CORS_ORIGIN` 即可。

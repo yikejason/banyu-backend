@@ -24,7 +24,7 @@ log "健康检查(预期 404 = 应用与数据库都活着)"
 sleep 5
 code=$(ssh "$SERVER_ALIAS" "curl -s -o /dev/null -w '%{http_code}' -m 8 -X POST http://127.0.0.1:8787/api/moods/verify -H 'Content-Type: application/json' -d '{\"shareCode\":\"m_deploy_check\",\"passcode\":\"0000\"}'")
 if [ "$code" = "404" ]; then
-  log "部署成功 ✅  入口 http://47.109.47.66 ,API 走 /api/*(nginx 同源反代)"
+  log "部署成功 ✅  入口 https://ban-yu.xyz ,API 走 /api/*(nginx 同源反代)"
 else
   echo "!! 健康检查异常(HTTP $code,预期 404),最近日志:" >&2
   ssh "$SERVER_ALIAS" "cd ${REMOTE_DIR} && docker compose logs --tail 30 app" >&2
