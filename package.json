@@ -17,13 +17,13 @@
     "express": "^5",
     "express-rate-limit": "^8",
     "nanoid": "^5",
+    "prisma": "^6",
     "zod": "^4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^20",
-    "prisma": "^6",
     "tsx": "^4",
     "typescript": "^5"
   }
