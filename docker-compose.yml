@@ -18,6 +18,8 @@ services:
       retries: 12
 
   app:
+    # 本地 build 出的镜像名；服务器上 docker load 同名镜像后 compose 直接使用，不触发构建
+    image: banyu-backend-app:latest
     build: .
     restart: unless-stopped
     depends_on:
