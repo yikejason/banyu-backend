@@ -18,5 +18,13 @@ model AnonymousMood {
   failedAttempts Int       @default(0)
   lockedUntil    DateTime?
   expiresAt      DateTime
+  // 首次口令验证成功的时间；核销后正文与口令哈希会被抹除，记录保留用于提示“已被访问”
+  redeemedAt     DateTime?
   createdAt      DateTime  @default(now())
+}
+
+// 设备级创建配额：项目无账号体系，客户端持久化的随机 clientId 充当限制主体，每 7 天最多成功创建一次
+model MoodCreator {
+  clientId       String   @id
+  lastCreatedAt  DateTime
 }

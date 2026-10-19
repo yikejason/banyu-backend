@@ -6,10 +6,26 @@
 
 | 端点 | 说明 |
 | --- | --- |
-| `POST /api/moods/anonymous` | 匿名心情：`{content(≤1000字), passcode(4-6位数字), expireHours(1-168,默认24)}` → `201 {shareCode}` |
-| `POST /api/moods/verify` | 口令校验：`{shareCode, passcode}` → `200 {content, createdAt}`；`404` 不存在、`410` 过期、`429` 锁定/限频、`401` 口令错（连错 5 次锁 15 分钟） |
+| `POST /api/moods/anonymous` | 匿名心情：`{clientId, content(≤1000字), passcode(4-6位数字), expireHours(1-168,默认24)}` → `201 {shareCode, expiresAt, nextAllowedAt}`；`429 {code:"COOLDOWN", nextAllowedAt}` 设备冷却中；`400` 参数不合法（含缺少 clientId 的旧客户端） |
+| `GET /api/moods/quota?clientId=` | 查询设备配额 → `200 {nextAllowedAt: string\|null}`（仅前端展示用，拦截在创建接口） |
+| `POST /api/moods/verify` | 口令校验：`{shareCode, passcode}` → `200 {content, createdAt}`（首次成功即核销，正文与口令哈希随即抹除）；`404` 不存在、`410` 过期、`409` 已被访问、`429` 锁定/限频、`401` 口令错（连错 5 次锁 15 分钟） |
 
-`/api/moods/verify` 另有单 IP 每 5 分钟 20 次的限频。
+安全规则（全部由后端原子强制，与前端状态无关）：
+
+- **设备级创建冷却**：项目无账号体系，`clientId` 是前端持久化的设备标识。同一 `clientId` 每 7 天最多成功创建 1 份；配额用条件更新原子抢占，并发请求至多一个成功；配额与分享创建同事务提交，失败不留痕（结构上幂等，重试不会产生第二份）。
+- **一次性核销**：口令验证通过后，用条件更新（`redeemedAt IS NULL` 且未过期）竞争核销资格，并发至多一个请求拿到正文；核销同时抹除 `content` 与 `passcodeHash`。错误口令只累计失败次数，不消耗核销资格。
+- **有效期**：`expiresAt` 由服务端时间计算，验证时实时判断，与清理任务无关；过期记录保留 7 天后由每日清理任务物理删除。
+- **限流**：`/verify` 单 IP 每 5 分钟 20 次；`/anonymous` 单 IP 每小时 10 次（兜底防 clientId 轮换刷冷却）。
+- 口令哈希用 bcrypt（cost 10），抵消 4-6 位数字口令的离线暴力破解。
+
+## 测试
+
+集成测试走真实 HTTP + 真实 Postgres，覆盖冷却、一次性核销、过期与并发竞争：
+
+```bash
+docker compose up -d db && npm run db:push   # 或指向任意可用库
+npm test
+```
 
 ## 启动
 
