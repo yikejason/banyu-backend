@@ -1,8 +1,11 @@
 # ---- 构建阶段：安装依赖、生成 Prisma Client、编译 TS ----
 FROM node:20-alpine AS build
 WORKDIR /app
+# Prisma 引擎二进制同样走 npmmirror（默认源在国内构建容器内拉不动）
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 COPY package.json package-lock.json ./
-RUN npm ci
+# 国内网络直连 npmjs 会被重置，统一走 npmmirror 镜像（内容与 npmjs 同源同步）
+RUN npm config set registry https://registry.npmmirror.com && npm ci
 COPY prisma ./prisma
 RUN npx prisma generate
 COPY . .
@@ -12,8 +15,9 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm config set registry https://registry.npmmirror.com && npm ci --omit=dev && npm cache clean --force
 # 构建阶段生成的 Prisma Client（含 Alpine 对应的查询引擎）
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY prisma ./prisma
